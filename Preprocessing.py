@@ -16,13 +16,13 @@ def save_expanded():
     #Resize from 32x32 to 150x150, interpolation for enhanced resolution
     
     for img in (x_train):
-        newImage = cv2.resize(img, dsize = (150, 150), interpolation = cv2.INTER_CUBIC)
+        newImage = cv2.resize(img, dsize = (50, 50), interpolation = cv2.INTER_CUBIC)
         x_train_new.append(newImage)
         
     x_train_new = np.array(x_train_new)
     
     for img in (x_test):
-        newImage = cv2.resize(img, dsize = (150, 150), interpolation = cv2.INTER_CUBIC)
+        newImage = cv2.resize(img, dsize = (50, 50), interpolation = cv2.INTER_CUBIC)
         x_test_new.append(newImage)
         
     x_test_new = np.array(x_test_new)
@@ -33,3 +33,13 @@ def save_expanded():
     #Save new image arrays
     np.save("expandedTrain.npy", x_train_new)
     np.save("expandedTest.npy", x_test_new)
+
+def encode_oneHot(labels, idx):
+    
+    encoded_labels = []
+    for label in labels:
+        zero_vec = np.zeros((idx))
+        zero_vec[label] = 1
+        encoded_labels.append(zero_vec)
+    return encoded_labels
+        
