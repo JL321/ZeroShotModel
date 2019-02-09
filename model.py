@@ -77,7 +77,7 @@ class zsModel:
             last_batchIdx = 0
             step = 0
             
-            for i in range(epochs):
+            for _ in range(epochs):
                 
                 epochLossArray = []
                 
