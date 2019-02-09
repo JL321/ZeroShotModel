@@ -13,7 +13,7 @@ def save_expanded():
     x_train_new = []
     x_test_new = []
     
-    #Resize from 32x32 to 150x150, interpolation for enhanced resolution
+    #Resize from 32x32 to 50x50, interpolation for enhanced resolution
     
     for img in (x_train):
         newImage = cv2.resize(img, dsize = (50, 50), interpolation = cv2.INTER_CUBIC)
