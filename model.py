@@ -46,49 +46,61 @@ class zsModel:
                 z = layer.flatten(z)
                 z = layer.fully_connected(z, 1024)
                 
+                #Load in embedding weights
+                embeddings = np.load("embedding_matrix.npy")
+                embedding_weights = tf.Variable(np.transpose(embeddings.astype(np.float32)), trainable = False)
+                z = layer.fully_connected(z, int(embeddings.shape[-1])) #Shape received normally as float
+                
                 #Feature projection layer
-                extract = layer.fully_connected(z, self.feature_size)
-                out = layer.fully_connected(extract, self.output_shape[-1], trainable = False)
+                extract = tf.matmul(z, embedding_weights)
+                self.out = layer.fully_connected(extract, self.output_shape[-1])
             
-                self.output = out
                 self.featureExtract = extract
-                loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.y, logits = self.output)
-                self.loss = tf.reduce_mean(loss)
-                #self.create_summaries()
+                vec_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.y, logits = self.out)
+                self.loss = tf.reduce_mean(vec_loss)
+                self.create_summaries()
                 
                 #Write a summary for loss
-                #self.train_writer = tf.summary.FileWriter("{}-{}".format("tfboard", self.name), self.graph)
+                self.train_writer = tf.summary.FileWriter("{}-{}".format("tfboard", self.name), self.graph)
                 
-                self.train = tf.train.AdamOptimizer().minimize(self.loss)
+                self.train_op = tf.train.AdamOptimizer(learning_rate = 1e-4).minimize(self.loss)
                 
                 self.saver = tf.train.Saver()
                 
                 self.sess.run(tf.global_variables_initializer())
             
-    def trainModel(self, input_set, label_set, epochs):
+    def train(self, input_set, label_set, epochs):
         
         with self.graph.as_default():
         
             #Eventually returns array of epoch losses
-            epochLoss = 0
             accumLoss = []
-            
+            periodLoss = 0
             batchIdx = self.batch_size
             last_batchIdx = 0
             step = 0
             
-            for _ in range(epochs):
+            for i in range(epochs):
                 
-                epochLossArray = []
+                #epochLossArray = []
+                accuracyStore = []
+                accuracy = 0
                 
                 print("{}th epoch".format(i))
                 while (batchIdx < input_set.shape[0]):
                     batch_train_x = input_set[last_batchIdx:batchIdx]
                     batch_train_y = label_set[last_batchIdx:batchIdx]
-                    _, stepLoss = self.sess.run([self.train, self.loss], feed_dict = {self.x: batch_train_x, self.y: batch_train_y})
                     
-                    epochLossArray.append(stepLoss)
-                    epochLoss += stepLoss
+                    _, pred, stepLoss, summary = self.sess.run([self.train_op, self.out, self.loss, self.summary_op], feed_dict = {self.x: batch_train_x, self.y: batch_train_y})
+                    
+                    periodLoss += stepLoss
+                    for i,v in enumerate(batch_train_y):
+                        if np.equal(np.argmax(v), np.argmax(pred[i])):
+                            accuracy += 1
+                    accuracy /= len(batch_train_y)
+                    accuracyStore.append(accuracy*100)
+                    
+                    #epochLossArray.append(stepLoss)
                     step += 1
                     if (batchIdx + self.batch_size <= input_set.shape[0]):
                         batchIdx += self.batch_size
@@ -97,41 +109,44 @@ class zsModel:
                         last_batchIdx = batchIdx
                         batchIdx = input_set.shape[0]
                 
-                    #if (step%200 == 0):
-                        #self.train_writer.add_summary(summary, step)
+                    if (step%200 == 0):
+                        accumLoss.append(periodLoss/200)
+                        periodLoss = 0
+                        self.train_writer.add_summary(summary, step)
                 
                     if (step%2000 == 0):
                         print("SAVING MODEL, {}th step".format(step))
-                        self.saver.save(self.sess, "/models/model.ckpt")
-                    accumLoss.append(epochLoss)
-                
-                #Display Loss Progression per Epoch
-                plt.pyplot(epochLossArray)
-                plt.ylabel("Loss")
-                plt.xlabel("Epoch step")
-                plt.show()
+                        print("Averaged Accuracy {}".format(np.sum(np.array(accuracyStore))/len(accuracyStore)))
+                        
+                        #Display Accuracy Progression per Epoch
+                        plt.plot(accuracyStore)
+                        plt.ylabel("Accuracy Percentile")
+                        plt.xlabel("Epoch step")
+                        plt.show()
+                        accuracyStore = []
+                        self.saver.save(self.sess, "models/newModel.ckpt")
                 
                 #Reset batches
                 batchIdx = self.batch_size
                 last_batchIdx = 0
-                epochLoss = 0
                 
                 #Arbitrarily shuffle data
                 
                 input_set, label_set = self._shuffle(input_set, label_set)
                 
-                
             #Return accumulated epoch loss
         return accumLoss
     
     def _shuffle(self, train_input, train_output):
-        combined = list(zip(train_input, train_output))
-        random.shuffle(combined)
+        perm_idx = np.random.permutation(len(train_input))
+        new_train_in = []
+        new_train_out = []
         
-        shuffled_x, shuffled_y = zip(*combined)
-        shuffled_x = np.array(shuffled_x)
-        shuffled_y = np.array(shuffled_y)
-        return shuffled_x, shuffled_y
+        for idx in perm_idx:
+            new_train_in.append(train_input[idx])
+            new_train_out.append(train_output[idx])
+            
+        return np.array(new_train_in), np.array(new_train_out)
 
     def featurePredicton(self, input_set):
         #Returns prediction for the feature map on the second last layer
@@ -143,6 +158,7 @@ class zsModel:
             tf.summary.scalar("loss", self.loss)
             self.summary_op = tf.summary.merge_all()
         
+    
         
         
     
