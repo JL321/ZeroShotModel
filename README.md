@@ -12,3 +12,5 @@ Achieves 90+% accuracy for top 3 predictions with zsl classes (true labels were 
 
 Training uses random sampling with a semi-deep CNN, restricted due to memory constraints on GPU.
 
+Note: Scaling word embeddings to reduce the weights on the feature prediction layer isn't effective
+
