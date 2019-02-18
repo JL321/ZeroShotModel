@@ -71,6 +71,7 @@ class zsModel:
                 #Write a summary for loss
                 #self.train_writer = tf.summary.FileWriter("{}-{}".format("tfboard", self.name), self.graph)
                 
+                #AdamOptimizer converges too quickly, leads to poor training.
                 self.train_op = tf.train.GradientDescentOptimizer(learning_rate = 0.002).minimize(self.loss)
                 
                 self.saver = tf.train.Saver()
