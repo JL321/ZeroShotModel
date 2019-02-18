@@ -15,7 +15,7 @@ class zsModel:
         
         """
         filters is (n,3)
-        n1 = size, n2 = kernel_size, n3 = use pooling
+        n1 = size, n2 = kernel_size, n3 = use pooling, n4 = normalization layers
         """
         
         self.input_shape = self.hparams.input_shape
