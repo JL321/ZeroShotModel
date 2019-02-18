@@ -15,7 +15,7 @@ class zsModel:
         
         """
         filters is (n,3)
-        n1 = size, n2 = kernel_size, n3 = use pooling, n4 = normalization layers
+        n1 = size, n2 = kernel_size, n3 = use pooling
         """
         
         self.input_shape = self.hparams.input_shape
@@ -49,20 +49,22 @@ class zsModel:
                 print(z.shape)
                 z = layer.flatten(z)
                 z = layer.fully_connected(z, 1024)
+                
+                self.test = z
                 z = tf.layers.batch_normalization(z)
                 #Load in embedding weights
-                regularizer = tf.contrib.layers.l2_regularizer(scale = 0.2)
+                
+                #Aim to minimize the features produced by image embeddings
                 
                 embeddings = np.load("embedding_matrix.npy")
                 embedding_weights = tf.Variable(np.transpose(embeddings.astype(np.float32)), trainable = False)
-                extract = layer.fully_connected(z, int(embeddings.shape[-1]), weights_regularizer = regularizer) #Shape received normally as float
-                 
+                extract = layer.fully_connected(z, int(embeddings.shape[-1])) #Shape received normally as float
+                
                 self.img_extract = extract
-                extract = tf.layers.batch_normalization(extract)
                 #Feature projection layer
                 
                 self.out = tf.matmul(extract, embedding_weights)
-                        
+
                 #vec_loss = tf.squared_difference(self.out, self.y)
                 vec_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels = self.y, logits = self.out)
                 self.loss = tf.reduce_mean(vec_loss) + tf.losses.get_regularization_loss()
@@ -71,7 +73,6 @@ class zsModel:
                 #Write a summary for loss
                 #self.train_writer = tf.summary.FileWriter("{}-{}".format("tfboard", self.name), self.graph)
                 
-                #AdamOptimizer converges too quickly, leads to poor training.
                 self.train_op = tf.train.GradientDescentOptimizer(learning_rate = 0.002).minimize(self.loss)
                 
                 self.saver = tf.train.Saver()
@@ -185,6 +186,9 @@ class zsModel:
     def save_model(self):
         
         with self.graph.as_default():
-            self.saver.save(self.sess, "models/revisedModel.ckpt")
+            self.saver.save(self.sess, "models/constrainedModel.ckpt")
 
+    def test_layer(self, input_x):
+        
+        return self.sess.run(self.test, feed_dict = {self.x: input_x})
     

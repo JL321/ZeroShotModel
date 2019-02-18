@@ -30,33 +30,31 @@ def main():
                                           feature_shape = 100,
                                           batch_size = 100,
                                           filters = [[64,3, False, 'SAME', True],
-                                                     [64,3, True, 'SAME', False],
+                                                     [64,3, True, 'SAME', True],
                                                      [128,3, False, 'SAME', True],
-                                                     [128,3, True, 'SAME', False],
+                                                     [128,3, True, 'SAME', True],
                                                      [256,3, False, 'SAME', True],
-                                                     [256,3, False, 'VALID', False],
+                                                     [256,3, False, 'VALID', True],
                                                      ])
     
     newModel = zsModel(hparams, "ZSModel")
-    newModel.load_weights("revisedModel.ckpt")
+    #newModel.load_weights("constrainedModel.ckpt")
     print("GRAPH BUILT")
-    
-    #step = 0
-    
+
     #closest_vectors("glove.6B.100d.txt", train_classes, zsl_dict)
-    '''
-    loss = newModel.train(x_train, y_train, steps = 5001)
     
-    plt.plot(loss[2:])
-    plt.ylabel("Loss (Accumulation per Epoch)")
-    plt.xlabel("Step (per 50)")
-    plt.show()
+    if train:
+    
+        loss = newModel.train(x_train, y_train, steps = 15001)
         
-    newModel.save_model()
-    '''
+        plt.plot(loss[2:])
+        plt.ylabel("Loss (Accumulation per Epoch)")
+        plt.xlabel("Step (per 50)")
+        plt.show()
+            
+        newModel.save_model()
     
     newModel.accuracy_test(x_test, y_test)
-
     
     relevant_embeds = []
     
@@ -133,14 +131,14 @@ def main():
             #Minimize euclidean distance to nearest word vector
             for test_class in zsl_dict.keys():
                 if once:
-                    print(features, " NOOO")
+                    print(newModel.test_layer(np.expand_dims(img, axis = 0)))
+                    print(features)
                     print(zsl_dict[test_class])
                     once = False
                 euc_distances.append(np.linalg.norm(features-zsl_dict[test_class]))
             euc_array =np.array(euc_distances)
             min_idx = np.argmin(euc_array)
             k_smallest = np.argpartition(euc_array, 3)[:3]
-            print(k_smallest)
             
             #Calculuate accuracies
             for i,v in enumerate(zsl_dict.keys()):
@@ -153,13 +151,6 @@ def main():
                     if v == label:
                         zsl_accuracies_k[label] += 1
                 
-            if label == 'bicycle':
-                plt.imshow(img)
-                plt.show()
-                for i,v in enumerate(zsl_dict.keys()):
-                    if (i == min_idx):
-                        print(v, " prediction.")
-                    
         for key in zsl_accuracies.keys():
             zsl_accuracies[key] /= totalLabel.count(key)
             print("ZSL Accuracy for {} is: {}".format(key, zsl_accuracies[key]))
