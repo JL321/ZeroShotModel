@@ -8,7 +8,11 @@ Simple zero shot classification algorithm that allows a model to make prediction
 
 Ultimately, the model aims to learn an efficient mapping of an image into a semantic space vector.
 
+
+
 ![Mappings](https://miro.medium.com/max/1200/1*Fat62b1ZITOFMPXTcHNkLw.jpeg)
+
+
 
 Zero Shot Classes Used:
 - Bicycle, Helicopter, Submarine
