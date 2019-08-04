@@ -6,6 +6,10 @@ Implementation of a zero shot classification model using the cifar-10 dataset.
 
 Simple zero shot classification algorithm that allows a model to make predictions on images that aren't within the class domains of the training dataset. The model performs a matrix multiplication using semantic space vectors (glove word embeddings) of training class names in the final layer, where the final output is of size (batch_dim, class_count). In this sense, the training of the model works in the same way as an image classifier, where a NLL loss is used with correct image labels in order to train model weights. At test time, the outputs of the second last layer are extracted from the model, and used in nearest neighbour search with semantic vectors of seen and unseen classes for classification (l2 distance).
 
+![Mappings](https://miro.medium.com/max/1200/1*Fat62b1ZITOFMPXTcHNkLw.jpeg)
+
+Ultimately, the model aims to learn an efficient mapping of an image into a semantic space vector.
+
 Zero Shot Classes Used:
 - Bicycle, Helicopter, Submarine
 
